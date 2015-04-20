@@ -8,101 +8,40 @@
 extern "C" {
 #endif
 
-struct Pcf8574State
+// What the master is doing at the moment
+typedef enum  { 
+    Writing = 0,
+    Reading,
+    Idle,
+} Pcf8574MasterStatus;
+
+// Current state of the device
+typedef struct
 {
-    u8 Address;
-    u8 Direction;
-};
+    u8 Address; // I2C address of the device
+    Pcf8574MasterStatus Status;
+} Pcf8574State;
 
-static u8 g_address;
-static u8 g_direction = 2; // 0 - write, 1 - read, other - stopped
+// Initializes the device
+void Pcf8574Init(Pcf8574State *state, u8 address);
 
-void Pcf8574Set(u8 data)
-{
-    I2CStart();
-    I2CSend(g_address & 0b11111110);
-    I2CSend(data);
-    I2CStop();
-}
+// Reads the device as single I2C transaction
+u8 Pcf8574Get(Pcf8574State *state);
 
-u8 Pcf8574Get()
-{
-    I2CStart();
-    I2CSend(g_address | 0b00000001);
-    u8 data = I2CRead();
-    I2CNak();
-    I2CStop();
-    return data;
-}
+// Writes to the device as single I2C transaction
+void Pcf8574Set(Pcf8574State *state, u8 data);
 
-void Pcf8574Write(u8 data)
-{
-    if (g_direction == 1) { // read
-        I2CRestart();
-        I2CSend(g_address & 0b11111110);
-        g_direction = 0;
-    } else if (g_direction != 0) { // not started
-        I2CStart();
-        I2CSend(g_address & 0b11111110);
-        g_direction = 0;
-    }
+// Initiates or continues reading from the device
+u8 Pcf8574Read(Pcf8574State *state);
 
-    I2CSend(data);
-}
+// Initiates or continues writing to the device
+void Pcf8574Write(Pcf8574State *state, u8 data);
 
-u8 Pcf8574Read()
-{
-    if (g_direction == 0) { // write
-        I2CRestart();
-        I2CSend(g_address | 0b00000001);
-        g_direction = 1;
-    } else if (g_direction == 1) { // read
-        I2CAck();
-    } else { // not started
-        I2CStart();
-        I2CSend(g_address | 0b00000001);
-        g_direction = 1;
-    }
-    
-    u8 data = I2CRead();
-    return data;
-}
+// Stop the current I2C transaction
+void Pcf8574Stop(Pcf8574State *state);
 
-void Pcf8574Stop() {
-    if (g_direction == 1) {
-        I2CNak();
-        I2CStop();
-    } else if (g_direction == 0) {
-        I2CStop();
-    }
-
-    g_direction = 2;
-}
-
-u8 Pcf8584ReadUntil(u8 mask, u8 cond) {
-    I2CStart();
-    I2CSend(g_address | 0b00000001);
-    
-    while (1) {
-        u8 data = I2CRead();    
-
-        if ((data & mask) == cond) {
-            I2CNak();
-            I2CStop();
-            return data;
-        }
-
-        I2CAck();
-    }
-
-    // To make the compiler happy
-    return 0;
-}
-
-void Pcf8574Init(u8 address) {
-    I2CInitMaster(0x09);
-    g_address = address;
-}
+// Reads the device until data & mask == cond
+u8 Pcf8584ReadUntil(Pcf8574State *state, u8 mask, u8 cond);
 
 #ifdef	__cplusplus
 }

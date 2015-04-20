@@ -87,13 +87,13 @@ void main(void) {
     }
      */
 
-    
-    Hd4478Init(I2CDriverAddress);
+    LcdState lcd;
+    Hd4478Init(&lcd, I2CDriverAddress);
 
     while (1) {
-        Hd4478Putc("\fKre Me Na\nKre Me Na");
+        Hd4478Putc(&lcd, "\fKreMeNaKreMeNa\nKreMeNaKreMeNa");
         __delay_ms(500);
-        Hd4478Putc("\f");
+        Hd4478Putc(&lcd, "\f");
         __delay_ms(500);
     }
 }

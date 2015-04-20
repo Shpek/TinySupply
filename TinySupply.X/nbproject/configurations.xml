@@ -18,6 +18,8 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
       <itemPath>i2c.c</itemPath>
+      <itemPath>pcf8574.c</itemPath>
+      <itemPath>hd4478.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
